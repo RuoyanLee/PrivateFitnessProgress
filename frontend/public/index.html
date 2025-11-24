@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Private Fitness Progress — Zama FHEVM</title>
+  <!-- Fonts: display & body -->
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    /* ================== Orange BTC BG (lighter header, console-ready) ================== */
+    :root{
+      --panel:rgba(24, 12, 2, .72); /* warm translucent */
+      --ink:#fffaf3;          /* text */
+      --muted:#ffe2c6;        /* secondary */
+      --line:rgba(255,255,255,.18);/* borders */
+      --brand:#ff7b1f;        /* orange */
+      --brand-2:#ffc797;      /* peach */
+      --ok:#10b981;           /* emerald */
+      --warn:#f59e0b;         /* amber */
+      --err:#ef4444;          /* red */
+      --r:16px;               /* base radius */
+      --shadow:0 14px 38px rgba(0,0,0,.32);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--ink);
+      font:15px/1.6 Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Arial;
+      /* Orange gradient + subtle repeating Bitcoin icons (SVG data URI) */
+      background-image:
+        linear-gradient(180deg, rgba(255,200,150,.22), rgba(255,140,40,.22)),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><g opacity='.12'><circle cx='32' cy='32' r='28' fill='%23ffffff'/><circle cx='32' cy='32' r='24' fill='none' stroke='%23ffffff' stroke-width='3' opacity='.45'/><text x='32' y='40' text-anchor='middle' font-family='Inter,Arial' font-weight='900' font-size='28' fill='%23ffffff' opacity='.6'>₿</text></g></svg>"),
+        radial-gradient(1100px 700px at -10% -10%, #ffb86b 0%, rgba(255,184,107,0) 50%),
+        linear-gradient(180deg, #ff9a3c, #ff6a00);
+      background-repeat: no-repeat, repeat, no-repeat, no-repeat;
+      background-size: cover, 72px 72px, cover, cover;
+      background-attachment: fixed, fixed, fixed, fixed;
+    }
+    .wrap{max-width:1120px;margin:0 auto;padding:28px}
+
+    /* Header — clean, centered, display font (no dark bar) */
+    header.hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;margin-bottom:24px;padding:18px;background: linear-gradient(180deg, #ff9a3c, #ff6a00);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+    .logo{font-family:'Bricolage Grotesque', Inter, ui-sans-serif;font-weight:800;font-size:2.15rem;letter-spacing:.2px;line-height:1.1}
+    .logo b{background:linear-gradient(135deg,#883d00,#4b2c13);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .badge{border:1px solid var(--line);color:#5f2d07;padding:6px 10px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06))}
+
+    /* Buttons */
+    .btn{appearance:none;border:none;cursor:pointer;border-radius:14px;padding:11px 16px;font-weight:800;color:#3a1906;background:linear-gradient(135deg,var(--brand),#ffe0c5);box-shadow:0 8px 24px rgba(255,122,31,.35);transition:transform .12s ease, filter .2s ease}
+    .btn:hover{transform:translateY(-1px)}
+    .btn:active{transform:translateY(0)}
+    .btn.alt{background:linear-gradient(135deg,#ff9a3c,#fff3e6);color:#351705}
+    .btn.ghost{background:transparent;color:var(--ink);border:1px dashed var(--line)}
+    .btn.warn{background:linear-gradient(135deg,var(--warn),#ffe29e);color:#5c3702}
+
+    /* Grid */
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
+    .card{grid-column:span 12;background:var(--panel);backdrop-filter:saturate(1.1) blur(2px);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);opacity:0;transform:translateY(14px)}
+    .card.in{animation:rise .6s cubic-bezier(.2,.8,.2,1) forwards}
+    @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @media (min-width:980px){.span-6{grid-column:span 6}.span-7{grid-column:span 7}.span-5{grid-column:span 5}.span-12{grid-column:span 12}}
+
+    /* Special corner treatment for the very first block */
+    .corner-special{border-top-right-radius:28px;border-bottom-left-radius:28px;border-top-left-radius:10px;border-bottom-right-radius:10px}
+
+    /* Section heading — no icons, nice display font */
+    .hrow{display:flex;align-items:center;justify-content:flex-start;margin-bottom:8px}
+    h3{font-family:'Bricolage Grotesque', Inter, ui-sans-serif;margin:0 0 6px;font-size:18px;letter-spacing:.2px}
+
+    label{display:block;color:var(--muted);font-weight:800;margin:10px 0 6px}
+    input, select{width:100%;padding:12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--ink)}
+    pre{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.18);padding:10px;border-radius:12px;border:1px dashed var(--line);margin:0}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .status{margin-top:10px;color:#5a2c07;font-weight:700;background:rgba(255,255,255,.2);display:inline-block;padding:6px 10px;border-radius:999px}
+    .small{font-size:12px;color:#ffe8d6}
+    .result{padding:12px;border-radius:12px;border:1px dashed var(--line);text-align:center;font-weight:900;background:rgba(0,0,0,.18)}
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:6px 10px;color:#ffe8d6}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero">
+    <div class="logo">Private <b>Fitness Progress</b></div>
+    <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:center">
+      <div id="netBadge" class="badge">Network: —</div>
+      <div id="ctrBadge" class="badge">Contract: —</div>
+      <button id="connectBtn" class="btn" style="margin-left:8px">Connect Wallet</button>
+    </div>
+  </header>
+
+  <section class="grid">
+    <!-- 1) Set Goal (encrypted) -->
+    <section class="card span-12 corner-special a-fade-up">
+      <div class="hrow"><h3>Set Goal (encrypted)</h3></div>
+      <label>Metric ID (string is hashed to <span style="font-family:ui-monospace,Menlo,Consolas,monospace">bytes32</span>)</label>
+      <input id="goalMetricStr" placeholder="e.g. pushups"/>
+      <label>Goal value (uint32)</label>
+      <input id="goalValue" type="number" min="0" placeholder="50"/>
+      <label>Orientation</label>
+      <select id="orientation">
+        <option value="1">Higher is better (≥ goal)</option>
+        <option value="0">Lower is better (≤ goal)</option>
+      </select>
+      <div class="row" style="margin-top:8px">
+        <button id="setGoalBtn" class="btn">Encrypt & setGoal</button>
+        <div id="goalStatus" class="small"></div>
+      </div>
+      <div id="goalTx" class="status"></div>
+    </section>
+
+    <!-- 2) Submit Result (encrypted) -->
+    <section class="card span-12 a-fade-up">
+      <div class="hrow"><h3>Submit Result (encrypted)</h3></div>
+      <label>Metric ID</label>
+      <input id="resMetricStr" placeholder="pushups"/>
+      <label>Result value (uint32)</label>
+      <input id="resValue" type="number" min="0" placeholder="55"/>
+      <div class="row" style="margin-top:8px">
+        <button id="submitResBtn" class="btn alt">Encrypt & submitResult</button>
+        <div id="resStatus" class="small"></div>
+      </div>
+      <div style="margin-top:10px" class="row">
+        <span class="pill">hit <code id="hitHandleBox">—</code></span>
+        <span class="pill">gapAbs <code id="gapHandleBox">—</code></span>
+      </div>
+      <div id="resTx" class="status"></div>
+    </section>
+
+    <!-- 3) Get Handles -->
+    <section class="card span-7 a-fade-up">
+      <div class="hrow"><h3>Get Handles</h3></div>
+      <label>User address (owner of metric)</label>
+      <input id="readUser" placeholder="0x... (leave empty for self)"/>
+      <label>Metric ID</label>
+      <input id="readMetricStr" placeholder="pushups"/>
+      <div class="row" style="margin-top:8px">
+        <button id="getGoalHBtn" class="btn">goalHandle</button>
+        <button id="getLastHBtn" class="btn">lastResultHandle</button>
+        <button id="getBestHBtn" class="btn">bestHandle</button>
+        <button id="getGapHBtn" class="btn">lastGapAbsHandle</button>
+        <button id="getHitHBtn" class="btn">lastHitHandle</button>
+        <div id="readStatus" class="small"></div>
+      </div>
+      <div style="margin-top:10px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div><label>goal</label><pre id="goalHandleOut">—</pre></div>
+        <div><label>lastResult</label><pre id="lastHandleOut">—</pre></div>
+        <div><label>best</label><pre id="bestHandleOut">—</pre></div>
+        <div><label>gapAbs</label><pre id="gapHandleOut">—</pre></div>
+        <div style="grid-column:span 2"><label>hit</label><pre id="hitHandleOut">—</pre></div>
+      </div>
+    </section>
+
+    <!-- 4) Decrypt any handle -->
+    <section class="card span-5 a-fade-up">
+      <div class="hrow"><h3>Decrypt</h3></div>
+      <label>Paste handle (bytes32)</label>
+      <input id="handleIn" placeholder="0x..."/>
+      <div class="row" style="margin-top:8px">
+        <button id="publicDecBtn" class="btn">publicDecrypt</button>
+        <button id="userDecBtn" class="btn ghost">userDecrypt (EIP‑712)</button>
+        <div id="decStatus" class="small"></div>
+      </div>
+      <div style="margin-top:10px"><label>Value</label><div id="decOut" class="result">—</div></div>
+    </section>
+
+    <!-- 5) Access & Public -->
+    <section class="card span-12 a-fade-up">
+      <div class="hrow"><h3>Access & Public Controls</h3></div>
+      <label>Metric ID</label>
+      <input id="accMetricStr" placeholder="pushups"/>
+      <label>Grant to address</label>
+      <input id="accAddress" placeholder="0x..."/>
+      <div class="row" style="margin-top:8px">
+        <button id="grantBtn" class="btn">grantAccess</button>
+        <button id="makePubBtn" class="btn warn">makeMetricPublic</button>
+        <div id="accStatus" class="small"></div>
+      </div>
+    </section>
+  </section>
+
+  <footer class="small" style="text-align:center;margin-top:18px">Built with Zama FHEVM • Relayer SDK 0.2.0 • Ethers v6</footer>
+</main>
+
+<script type="module">
+  import { BrowserProvider, Contract, getAddress, keccak256, toUtf8Bytes } from "https://cdn.jsdelivr.net/npm/ethers@6.13.4/+esm";
+  import * as ZAMA_SDK from "https://cdn.zama.org/relayer-sdk-js/0.3.0-5/relayer-sdk-js.js";
+
+  // ===== CONFIG =====
+  const CONFIG = {
+    NETWORK_NAME: "Sepolia",
+    CHAIN_ID_HEX: "0xaa36a7", // 11155111
+    RELAYER_URL: "https://relayer.testnet.zama.cloud",
+    CONTRACT_ADDRESS: "0xc1bF4ab57f70F68fD86a17A029972d2Ac30B9186" // <= replace after deploy
+  };
+  console.log('[CFG]', CONFIG);
+
+  // ===== ABI (minimal for this demo) =====
+  const ABI = [
+    { "inputs":[{"internalType":"bytes32","name":"metricId","type":"bytes32"},{"internalType":"externalEuint32","name":"encGoal","type":"bytes32"},{"internalType":"bytes","name":"attestation","type":"bytes"},{"internalType":"bool","name":"higherIsBetter","type":"bool"}],"name":"setGoal","outputs":[],"stateMutability":"nonpayable","type":"function" },
+    { "inputs":[{"internalType":"bytes32","name":"metricId","type":"bytes32"},{"internalType":"externalEuint32","name":"encResult","type":"bytes32"},{"internalType":"bytes","name":"attestation","type":"bytes"}],"name":"submitResult","outputs":[{"internalType":"bytes32","name":"hitHandle","type":"bytes32"},{"internalType":"bytes32","name":"gapAbsHandle","type":"bytes32"}],"stateMutability":"nonpayable","type":"function" },
+    { "inputs":[{"internalType":"bytes32","name":"metricId","type":"bytes32"},{"internalType":"address","name":"to","type":"address"}],"name":"grantAccess","outputs":[],"stateMutability":"nonpayable","type":"function" },
+    { "inputs":[{"internalType":"bytes32","name":"metricId","type":"bytes32"}],"name":"makeMetricPublic","outputs":[],"stateMutability":"nonpayable","type":"function" },
+    { "inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"bytes32","name":"metricId","type":"bytes32"}],"name":"goalHandle","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function" },
+    { "inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"bytes32","name":"metricId","type":"bytes32"}],"name":"lastResultHandle","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function" },
+    { "inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"bytes32","name":"metricId","type":"bytes32"}],"name":"bestHandle","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function" },
+    { "inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"bytes32","name":"metricId","type":"bytes32"}],"name":"lastGapAbsHandle","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function" },
+    { "inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"bytes32","name":"metricId","type":"bytes32"}],"name":"lastHitHandle","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function" }
+  ];
+  console.log('[ABI] methods:', ABI.map(x=>x.name));
+
+  // ===== Helpers =====
+  const $ = s => document.querySelector(s);
+  const toHex = u8 => '0x' + Array.from(u8, b => b.toString(16).padStart(2,'0')).join('');
+  const short = a => a ? a.slice(0,6) + '…' + a.slice(-4) : '—';
+  const toBytes32Id = (s) => keccak256(toUtf8Bytes(String(s||'')));
+
+  // ===== UI refs =====
+  const netBadge = $('#netBadge');
+  const ctrBadge = $('#ctrBadge');
+  const connectBtn = $('#connectBtn');
+
+  const goalMetricStr = $('#goalMetricStr');
+  const goalValue = $('#goalValue');
+  const orientation = $('#orientation');
+  const setGoalBtn = $('#setGoalBtn');
+  const goalStatus = $('#goalStatus');
+  const goalTx = $('#goalTx');
+
+  const resMetricStr = $('#resMetricStr');
+  const resValue = $('#resValue');
+  const submitResBtn = $('#submitResBtn');
+  const resStatus = $('#resStatus');
+  const hitHandleBox = $('#hitHandleBox');
+  const gapHandleBox = $('#gapHandleBox');
+  const resTx = $('#resTx');
+
+  const readUser = $('#readUser');
+  const readMetricStr = $('#readMetricStr');
+  const getGoalHBtn = $('#getGoalHBtn');
+  const getLastHBtn = $('#getLastHBtn');
+  const getBestHBtn = $('#getBestHBtn');
+  const getGapHBtn = $('#getGapHBtn');
+  const getHitHBtn = $('#getHitHBtn');
+  const readStatus = $('#readStatus');
+  const goalHandleOut = $('#goalHandleOut');
+  const lastHandleOut = $('#lastHandleOut');
+  const bestHandleOut = $('#bestHandleOut');
+  const gapHandleOut = $('#gapHandleOut');
+  const hitHandleOut = $('#hitHandleOut');
+
+  const handleIn = $('#handleIn');
+  const publicDecBtn = $('#publicDecBtn');
+  const userDecBtn = $('#userDecBtn');
+  const decStatus = $('#decStatus');
+  const decOut = $('#decOut');
+
+  const accMetricStr = $('#accMetricStr');
+  const accAddress = $('#accAddress');
+  const grantBtn = $('#grantBtn');
+  const makePubBtn = $('#makePubBtn');
+  const accStatus = $('#accStatus');
+
+  // ===== State =====
+  let provider, signer, address, contract, relayer;
+
+  netBadge.textContent = `Network: ${CONFIG.NETWORK_NAME}`;
+  ctrBadge.textContent = `Contract: ${short(CONFIG.CONTRACT_ADDRESS)}`;
+
+  // Animate cards in viewport
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.15});
+  document.querySelectorAll('.card').forEach(el=>{ io.observe(el); });
+  console.log('[UI] Cards observed for animation');
+
+  async function initRelayer(){
+    if (relayer) return relayer;
+    await ZAMA_SDK.initSDK();
+    const { createInstance, SepoliaConfig } = ZAMA_SDK;
+    relayer = await createInstance({ ...SepoliaConfig, relayerUrl: CONFIG.RELAYER_URL, network: window.ethereum, debug: true });
+    console.log('[Relayer] Initialized', { relayerUrl: CONFIG.RELAYER_URL });
+    return relayer;
+  }
+
+  async function connect(){
+    if(!window.ethereum) throw new Error('Install MetaMask / compatible wallet');
+    provider = new BrowserProvider(window.ethereum);
+    await provider.send('eth_requestAccounts', []);
+    const net = await provider.getNetwork();
+    console.log('[Wallet] Connected network', net.chainId);
+    if (net.chainId !== 11155111n) {
+      try { await provider.send('wallet_switchEthereumChain', [{ chainId: CONFIG.CHAIN_ID_HEX }]); console.log('[Wallet] Switched to Sepolia'); } catch(e){ console.warn('[Wallet] switch chain failed', e); }
+    }
+    signer = await provider.getSigner();
+    address = await signer.getAddress();
+    contract = new Contract(getAddress(CONFIG.CONTRACT_ADDRESS), ABI, signer);
+    connectBtn.textContent = short(address);
+    console.log('[Wallet] Address', address);
+    await initRelayer();
+  }
+
+  connectBtn.addEventListener('click', async ()=>{ try{ await connect(); } catch(e){ console.error('[Connect][ERR]', e); alert(e.message||e); } });
+
+  async function encryptUint32(value){
+    console.log('[Encrypt] uint32 value →', value);
+    const r = await initRelayer();
+    const enc = r.createEncryptedInput(getAddress(CONFIG.CONTRACT_ADDRESS), getAddress(address));
+    if (enc.add32) enc.add32(BigInt(value));
+    else if (enc.addUint32) enc.addUint32(BigInt(value));
+    else throw new Error('SDK: no add32/addUint32');
+    const { handles, inputProof } = await enc.encrypt();
+    const handle = typeof handles[0] === 'string' ? handles[0] : toHex(handles[0]);
+    const att = typeof inputProof === 'string' ? (inputProof.startsWith('0x')? inputProof : ('0x'+inputProof)) : toHex(inputProof);
+    console.log('[Encrypt] handle/att', handle, inputProof ? String(inputProof).length+'b' : '');
+    return { handle, att };
+  }
+
+  // ====== Actions ======
+  setGoalBtn.addEventListener('click', async ()=>{
+    try{
+      if(!contract) await connect();
+      const m = toBytes32Id(goalMetricStr.value || 'pushups');
+      const v = Math.max(0, parseInt(goalValue.value || '0'));
+      goalStatus.textContent = 'Encrypting…';
+      const { handle, att } = await encryptUint32(v);
+      goalStatus.textContent = 'Sending tx…';
+      const tx = await contract.setGoal(m, handle, att, orientation.value === '1');
+      goalTx.textContent = 'TX: ' + tx.hash;
+      console.log('[TX] setGoal', { metricId: goalMetricStr.value, hash: tx.hash });
+      await tx.wait();
+      goalStatus.textContent = 'Goal set';
+    }catch(e){ console.error('[setGoal][ERR]', e); goalStatus.textContent = 'Error: '+(e.reason||e.message||String(e)); }
+  });
+
+  submitResBtn.addEventListener('click', async ()=>{
+    try{
+      if(!contract) await connect();
+      const m = toBytes32Id(resMetricStr.value || 'pushups');
+      const v = Math.max(0, parseInt(resValue.value || '0'));
+      resStatus.textContent = 'Encrypting…';
+      const { handle, att } = await encryptUint32(v);
+      resStatus.textContent = 'Sending tx…';
+      const tx = await contract.submitResult(m, handle, att);
+      resTx.textContent = 'TX: ' + tx.hash;
+      console.log('[TX] submitResult', { metricId: resMetricStr.value, hash: tx.hash });
+      const rc = await tx.wait();
+      console.log('[TX] mined', rc?.status);
+      try{
+        const self = getAddress(address);
+        const hitH = await contract.lastHitHandle(self, m);
+        const gapH = await contract.lastGapAbsHandle(self, m);
+        hitHandleBox.textContent = String(hitH);
+        gapHandleBox.textContent = String(gapH);
+        console.log('[Handles] hit/gap', hitH, gapH);
+      }catch(inner){ console.warn('[Handles][WARN] post-read failed', inner); }
+      resStatus.textContent = 'Submitted';
+    }catch(e){ console.error('[submitResult][ERR]', e); resStatus.textContent = 'Error: '+(e.reason||e.message||String(e)); }
+  });
+
+  function ensureAddr(a){ return a && a.trim() ? getAddress(a.trim()) : getAddress(address); }
+
+  getGoalHBtn.addEventListener('click', async ()=>{ await readHandle('goal'); });
+  getLastHBtn.addEventListener('click', async ()=>{ await readHandle('last'); });
+  getBestHBtn.addEventListener('click', async ()=>{ await readHandle('best'); });
+  getGapHBtn.addEventListener('click', async ()=>{ await readHandle('gap'); });
+  getHitHBtn.addEventListener('click', async ()=>{ await readHandle('hit'); });
+
+  async function readHandle(kind){
+    try{
+      if(!contract) await connect();
+      const user = ensureAddr(readUser.value || address);
+      const m = toBytes32Id(readMetricStr.value || 'pushups');
+      readStatus.textContent = 'Fetching…';
+      let h;
+      if (kind==='goal') h = await contract.goalHandle(user, m), goalHandleOut.textContent = String(h);
+      if (kind==='last') h = await contract.lastResultHandle(user, m), lastHandleOut.textContent = String(h);
+      if (kind==='best') h = await contract.bestHandle(user, m), bestHandleOut.textContent = String(h);
+      if (kind==='gap')  h = await contract.lastGapAbsHandle(user, m), gapHandleOut.textContent = String(h);
+      if (kind==='hit')  h = await contract.lastHitHandle(user, m), hitHandleOut.textContent = String(h);
+      handleIn.value = String(h||'');
+      console.log('[ReadHandle]', kind, '=>', h);
+      readStatus.textContent = 'OK';
+    }catch(e){ console.error('[readHandle][ERR]', e); readStatus.textContent = 'Error: '+(e.reason||e.message||String(e)); }
+  }
+
+  publicDecBtn.addEventListener('click', async ()=>{
+    try{
+      const h = handleIn.value.trim(); if(!h) throw new Error('Paste handle');
+      decStatus.textContent = 'publicDecrypt…';
+      const r = await initRelayer();
+      const out = await r.publicDecrypt([{ handle: h, contractAddress: getAddress(CONFIG.CONTRACT_ADDRESS) }]);
+      console.log('[Decrypt][public] out', out);
+      showDecrypted(h, out);
+      decStatus.textContent = 'Done';
+    }catch(e){ console.error('[publicDecrypt][ERR]', e); decStatus.textContent = 'Error: '+(e.reason||e.message||String(e)); }
+  });
+
+  userDecBtn.addEventListener('click', async ()=>{
+    try{
+      const h = handleIn.value.trim(); if(!h) throw new Error('Paste handle');
+      decStatus.textContent = 'EIP-712…';
+      const r = await initRelayer();
+      const kp = await ZAMA_SDK.generateKeypair();
+      console.log('[EIP-712] keypair', { pub: kp.publicKey?.slice?.(0,16)+'…' });
+      const startTs = Math.floor(Date.now()/1000).toString();
+      const days = '7';
+      const eip = r.createEIP712(kp.publicKey, [getAddress(CONFIG.CONTRACT_ADDRESS)], startTs, days);
+      const provider2 = new BrowserProvider(window.ethereum);
+      const signer2 = await provider2.getSigner();
+      const signature = await signer2.signTypedData(eip.domain, { UserDecryptRequestVerification: eip.types.UserDecryptRequestVerification }, eip.message);
+      console.log('[EIP-712] signed');
+      decStatus.textContent = 'userDecrypt…';
+      const out = await r.userDecrypt(
+        [{ handle: h, contractAddress: getAddress(CONFIG.CONTRACT_ADDRESS) }],
+        kp.privateKey, kp.publicKey,
+        signature.replace(/^0x/, ''),
+        [getAddress(CONFIG.CONTRACT_ADDRESS)],
+        await signer2.getAddress(),
+        startTs, days
+      );
+      console.log('[Decrypt][user] out', out);
+      showDecrypted(h, out);
+      decStatus.textContent = 'Done';
+    }catch(e){ console.error('[userDecrypt][ERR]', e); decStatus.textContent = 'Error: '+(e.reason||e.message||String(e)); }
+  });
+
+  function showDecrypted(handle, out){
+    const key = out[handle] !== undefined ? handle : Object.keys(out).find(k=>k.toLowerCase()===handle.toLowerCase());
+    const raw = key ? out[key] : undefined;
+    console.log('[ShowDecrypted]', { key, raw });
+    if (raw === undefined) { decOut.textContent = '—'; return; }
+    const num = Number(raw);
+    if (raw === 0 || raw === 1 || num === 0 || num === 1) {
+      decOut.textContent = (Number(raw) ? 'true ✅' : 'false ❌');
+    } else if (Number.isFinite(num)) {
+      decOut.textContent = String(num);
+    } else {
+      decOut.textContent = String(raw);
+    }
+  }
+
+  grantBtn.addEventListener('click', async ()=>{
+    try{
+      if(!contract) await connect();
+      const m = toBytes32Id(accMetricStr.value || 'pushups');
+      const to = getAddress(accAddress.value.trim());
+      accStatus.textContent = 'Submitting…';
+      const tx = await contract.grantAccess(m, to);
+      await tx.wait();
+      accStatus.textContent = 'Access granted';
+      console.log('[Access] grantAccess', { to, metric: accMetricStr.value });
+    }catch(e){ console.error('[grantAccess][ERR]', e); accStatus.textContent = 'Error: '+(e.reason||e.message||String(e)); }
+  });
+
+  makePubBtn.addEventListener('click', async ()=>{
+    try{
+      if(!contract) await connect();
+      const m = toBytes32Id(accMetricStr.value || 'pushups');
+      accStatus.textContent = 'Submitting…';
+      const tx = await contract.makeMetricPublic(m);
+      await tx.wait();
+      accStatus.textContent = 'Metric made public';
+      console.log('[Access] makeMetricPublic', { metric: accMetricStr.value });
+    }catch(e){ console.error('[makeMetricPublic][ERR]', e); accStatus.textContent = 'Error: '+(e.reason||e.message||String(e)); }
+  });
+</script>
+</body>
+</html>
